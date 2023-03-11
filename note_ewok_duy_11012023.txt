@@ -1,0 +1,82 @@
+##########################################################
+#####################  ESDF PLANNER  #####################
+
+$ roslaunch mavros px4.launch fcu_url:="/dev/ttyTHS1:921600"
+
+$ roslaunch realsense2_camera rs_camera.launch depth_width:=640 depth_height:=480 depth_fps:=15
+
+$ roslaunch esdf_planner hitl_esdf_planner.launch
+
+$ rosbag record -o ~/ -a -x "(.*)theora(.*)|(.*)compressed(.*)|(.*)global_position(.*)|(.*)imu(.*)|(.*)geometric_controller(.*)|(.*)reference(.*)"
+$ rosbag record -o ~/ -a -x "(.*)theora(.*)|(.*)compressed(.*)|(.*)global_position(.*)|(.*)imu(.*)|(.*)geometric_controller(.*)|(.*)setpoint_raw(.*)|(.*)rgb_camera(.*)|(.*)stereo_module(.*)"
+
+$ rostopic list -v
+
+$ rostopic echo /mavros/local_position/pose
+
+$ rosbag info .bag
+
+$ roslaunch px4_fast_planner geometric_controller.launch
+
+$ rostopic pub --once /command/trajectory trajectory_msgs/MultiDOFJointTrajectory 
+
+
+##########################################################
+###################  EWOK  ###############################
+
+-Terminal 1:
+roslaunch mavros px4.launch fcu_url:="/dev/ttyTHS1:921600"
+
+-Terminal 2:
+roslaunch realsense2_camera rs_camera.launch depth_width:=640 depth_height:=480 depth_fps:=15
+roslaunch realsense2_camera rs_camera.launch camera:=cam_1 serial_no:=001622072448 depth_width:=640 depth_height:=480 depth_fps:=15
+roslaunch realsense2_camera rs_camera.launch camera:=cam_2 serial_no:=146222251613 depth_width:=640 depth_height:=480 depth_fps:=15
+
+-Terminal 3:
+source duy_ws/devel/setup.bash
+rosrun offboard visualize-data.py
+
+-Terminal 4:
+source duy_ws/devel/setup.bash
+roslaunch ewok_optimization optimization_point.launch
+
+-Terminal 5:
+source duy_ws/devel/setup.bash
+rosrun offboard MarkerDetection.py
+
+
+-Terminal 6: Khi chạy tránh vật cản
+roslaunch offboard plannerMarker.launch
+
+-Terminal 7:
+cd bagfile/
+rosbag record -O subset_09022023_Gazebo_full_simulation rostopic echo /camera/color/camera_info /camera/color/image_raw /camera/depth/duy/camera_info /camera/depth/duy/image_raw /depth_topic_2 /mavros/local_position/pose /mavros/imu/data /mavros/local_position/odom /ring_buffer/distance /ring_buffer/free /ring_buffer/free_array /ring_buffer/occupied /before_optimization /after_optimization /global_trajectory /tf /tf_static /aruco_marker_pos /target_pos /move_position /ids_detection
+
+
+
+
+
+
+/usb_cam/camera_info /usb_cam/image_raw
+
+topics: /optimization_point
+/global_trajectory
+/before_optimization
+/after_optimization
+
+cam1 d435
+cam2 d455
+
+
+
+Run data bag in my computer:
+$ source planning_Gazebo_ws/devel/setup.bash
+$ roslaunch ewok_ring_buffer statictransform.launch
+
+$ cd bagfile/Real_Ewok
+$ rosbag play subset_07112022_3.bag --pause
+
+$ cd planning_Gazebo_ws/src/ewok_optimization/rviz/
+$ rviz -d optimizion_example.rviz
+
+
